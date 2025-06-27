@@ -2,17 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import type { FeatureCollection, Feature, Point } from 'geojson'
-
 import dynamic from 'next/dynamic'
+import { useStore } from './lib/useStore'
+
 const MapLibreView = dynamic(() => import('./component/MapLibreView'), { ssr: false })
 
 export default function Home() {
-  const [watchId, setWatchId] = useState<number | null>(null)
+  // const [watchId, setWatchId] = useState<number | null>(null)
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lon: number; accuracy: number } | null>(null)
-  const [features, setFeatures] = useState<Feature<Point, { espece: string; accuracy: number }>[]>([])
   const [espece, setEspece] = useState('')
 
-  // Démarre la surveillance GPS au montage
+  // Zustand store
+  const features = useStore((state) => state.features)
+  const addFeature = useStore((state) => state.addFeature)
+  const removeFeature = useStore((state) => state.removeFeature)
+  const clearFeatures = useStore((state) => state.clearFeatures)
+
   useEffect(() => {
     const id = navigator.geolocation.watchPosition(
       (pos) => {
@@ -30,22 +35,18 @@ export default function Home() {
       }
     )
 
-    setWatchId(id)
-
     return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId)
-      }
+      navigator.geolocation.clearWatch(id)
     }
   }, [])
 
   const enregistrer = () => {
-    // if (!currentCoords || currentCoords.accuracy > 10) {
-    //   alert("La précision est insuffisante pour enregistrer.")
-    //   return
-    // }
     if (!currentCoords) {
       alert("Pas de coordonnées pour enregistrer.")
+      return
+    }
+    if (!espece.trim()) {
+      alert("Veuillez saisir une espèce.")
       return
     }
     const newFeature: Feature<Point, { espece: string; accuracy: number }> = {
@@ -60,11 +61,15 @@ export default function Home() {
       },
     }
 
-    setFeatures((prev) => [...prev, newFeature])
+    addFeature(newFeature)
     setEspece('')
   }
 
   const exporterGeoJSON = () => {
+    const featureCollection: FeatureCollection<Point, { espece: string; accuracy: number }> = {
+      type: 'FeatureCollection',
+      features,
+    }
     const dataStr = JSON.stringify(featureCollection, null, 2)
     const blob = new Blob([dataStr], { type: 'application/geo+json' })
     const url = URL.createObjectURL(blob)
@@ -74,11 +79,6 @@ export default function Home() {
     link.download = 'arbres.geojson'
     link.click()
     URL.revokeObjectURL(url)
-  }
-
-  const featureCollection: FeatureCollection<Point, { espece: string }> = {
-    type: 'FeatureCollection',
-    features,
   }
 
   return (
@@ -108,7 +108,8 @@ export default function Home() {
       <button
         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         onClick={enregistrer}
-        disabled={!currentCoords || !espece.trim()}>
+        disabled={!currentCoords || !espece.trim()}
+      >
         Enregistrer
       </button>
 
@@ -119,6 +120,7 @@ export default function Home() {
       >
         💾 Télécharger GeoJSON
       </button>
+
       {currentCoords && (
         <div className="mt-4">
           <h2 className="font-semibold mb-2">🗺️ Carte de position</h2>
@@ -126,17 +128,37 @@ export default function Home() {
             lat={currentCoords.lat}
             lon={currentCoords.lon}
             accuracy={currentCoords.accuracy}
+            features={features} // tu peux ajouter ça pour afficher les points enregistrés
           />
         </div>
       )}
+
       <ul className="mt-4 space-y-2">
         {features.map((feat, idx) => (
-          <li key={idx} className="p-2 border rounded">
-            <div><strong>Espèce :</strong> {feat.properties.espece}</div>
-            <div><strong>Coordonnées :</strong> {feat.geometry.coordinates[1].toFixed(5)}, {feat.geometry.coordinates[0].toFixed(5)}</div>
+          <li key={idx} className="p-2 border rounded flex justify-between items-center">
+            <div>
+              <div><strong>Espèce :</strong> {feat.properties.espece}</div>
+              <div><strong>Coordonnées :</strong> {feat.geometry.coordinates[1].toFixed(5)}, {feat.geometry.coordinates[0].toFixed(5)}</div>
+              <div><strong>Précision :</strong> ±{feat.properties.accuracy.toFixed(1)} m</div>
+            </div>
+            <button
+              onClick={() => removeFeature(idx)}
+              className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+            >
+              Supprimer
+            </button>
           </li>
         ))}
       </ul>
+
+      {features.length > 0 && (
+        <button
+          onClick={clearFeatures}
+          className="mt-4 bg-red-800 text-white px-4 py-2 rounded hover:bg-red-900"
+        >
+          🗑️ Supprimer tout
+        </button>
+      )}
     </main>
   )
 }

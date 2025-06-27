@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { FeatureCollection, Point } from 'geojson'
+import type { FeatureCollection, Feature, Point } from 'geojson'
 
 const STYLE = "/plan-ign-standard.json"
 
@@ -11,6 +11,7 @@ type Props = {
     lat: number
     lon: number
     accuracy: number
+    features?: Feature[]
 }
 
 export default function MapLibreView({ lat, lon, accuracy }: Props) {
