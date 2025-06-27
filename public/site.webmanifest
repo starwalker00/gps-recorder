@@ -1,0 +1,15 @@
+{
+  "name": "gps-recorder",
+  "short_name": "gps-recorder",
+  "icons": [
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
