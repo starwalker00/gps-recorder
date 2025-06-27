@@ -85,7 +85,7 @@ export default function Home() {
     <main className="p-4 max-w-xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">📡 Précision GPS en temps réel</h1>
 
-      <div className="p-3 border rounded bg-gray-50">
+      <div className="p-3 border rounded">
         {currentCoords ? (
           <>
             <p><strong>Latitude :</strong> {currentCoords.lat.toFixed(6)}</p>
