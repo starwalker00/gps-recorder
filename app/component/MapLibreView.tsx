@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import type { FeatureCollection, Point } from 'geojson'
 
 const STYLE = "/plan-ign-standard.json"
 
@@ -41,7 +42,7 @@ export default function MapLibreView({ lat, lon, accuracy }: Props) {
                 map.removeSource('user-location')
             }
 
-            const userLocation = {
+            const userLocation: FeatureCollection<Point> = {
                 type: 'FeatureCollection',
                 features: [
                     {
@@ -62,12 +63,13 @@ export default function MapLibreView({ lat, lon, accuracy }: Props) {
                 type: 'circle',
                 source: 'user-location',
                 paint: {
-                    'circle-radius': {
-                        stops: [
-                            [0, 0],
-                            [20, accuracy],
-                        ],
-                    },
+                    'circle-radius': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        0, 0,
+                        20, accuracy
+                    ],
                     'circle-color': '#3b82f6',
                     'circle-opacity': 0.2,
                     'circle-stroke-width': 1,
